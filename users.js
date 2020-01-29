@@ -14,24 +14,75 @@ admin.initializeApp({
 
 database = admin.firestore();
 collection = database.collection("users");
-console.log(collection);
 
-router.get("/users", (req, res, next) => {
+router.get("/users", (req, res) => {
     let allUsers = [];
-    collection.get().then(
-        snapshot => {
-            snapshot.forEach(doc => {
-                allUsers.push({
-                    "id": "000",
-                    "networks": {
-                        0: "0",
-                        1: "2",
-                        2: "4",
-                    }
-                })
-            })
-        }
-    )
+    collection.get().then(snapshot => {
+
+        //process data
+        snapshot.forEach(doc => {
+            allUsers.push(doc.data());
+        });
+
+        //then respond as response
+        res.json({
+            "message": "Retrieved all user data",
+            "data": allUsers,
+        });
+
+    }).catch(err => {
+        console.log("Error retrieving users", err);
+    });
 });
+ 
+router.get("/user/:id", (req, res) => {
+    let oneUser = []
+    collection.doc(req.params.id).get().then(doc => {
+
+        if (!doc.exists) {
+            throw "Data does not exist";
+        } else {
+            res.json({
+                "message": "Retrieved one user data",
+                "data": doc.data(),
+            });
+        }
+
+    }).catch(err => {
+        console.log("Error retrieving user:", err);
+    });
+});
+
+router.post("/adduser/:id", (req, res) => {
+    collection.doc(req.params.id).set(req.body).then( () => {
+        res.json({
+            "message": "Added new user",
+            "data": req.body,
+        })
+    }).catch(err => {
+        console.log("Error adding user:", err);
+    });
+});
+
+router.post("/addusernetwork/:id/:network", (req, res) => {
+    collection.doc(req.params.id).get().then( doc => {
+        if (!doc.exists) {
+            throw "Data does not exist";
+        }
+        //append network
+        let newData = doc.data();
+        newData["networks"].push(req.params.network);
+        //update network
+        collection.doc(req.params.id).set(newData);
+        //respond as response
+        res.json({
+            "message": "Added one user network",
+            "data": newData,
+        });
+        
+    }).catch(err => {
+        console.log("Error adding user network:", err);
+    })
+}); 
 
 module.exports = router;
