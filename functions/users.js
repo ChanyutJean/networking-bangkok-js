@@ -25,13 +25,16 @@ router.get("/users", (req, res) => {
         });
 
         //then respond as response
-        res.json({
+        res.status(200).json({
             "message": "Retrieved all user data",
             "data": allUsers,
         });
 
     }).catch(err => {
-        console.log("Error retrieving users", err);
+        res.status(500).json({
+            "message": "Error retrieving users", 
+            "data": err,
+        });
     });
 });
  
@@ -40,37 +43,100 @@ router.get("/user/:id", (req, res) => {
     collection.doc(req.params.id).get().then(doc => {
 
         if (!doc.exists) {
-            throw "Data does not exist";
-        } else {
-            res.json({
-                "message": "Retrieved one user data",
-                "data": doc.data(),
-            });
+            throw "Invalid user id";
         }
+        res.status(200).json({
+            "message": "Retrieved one user data",
+            "data": doc.data(),
+        });
 
     }).catch(err => {
-        console.log("Error retrieving user:", err);
+        if (err == "Invalid user id") {
+            res.status(400).json({
+                "message": "Error retrieving user", 
+                "data": err,
+            });
+        } else {
+            res.status(500).json({
+                "message": "Error retrieving user", 
+                "data": err,
+            });
+        }
+    });
+});
+
+router.post("/updateuser/:id", (req, res) => {
+    collection.doc(req.params.id).get().then( doc => {
+        
+        if (!doc.exists) {
+            throw "Invalid user id";
+        }
+        if (req.body == null || req.body.info == undefined || req.body.networks == undefined) {
+            throw "Invalid request body";
+        }
+        collection.doc(req.params.id).set(req.body).then( () => {
+            res.status(200).json({
+                "message": "Updated user info",
+                "data": req.body,
+            });
+        });
+
+    }).catch(err => {
+        if (err == "Invalid user id" || err == "Invalid request body") {
+            res.status(400).json({
+                "message": "Error updating user", 
+                "data": err,
+            });
+        } else {
+            res.status(500).json({
+                "message": "Error updating user", 
+                "data": err,
+            });
+        }
     });
 });
 
 router.post("/adduser/:id", (req, res) => {
-    collection.doc(req.params.id).set(req.body).then( () => {
-        res.json({
-            "message": "Added new user",
-            "data": req.body,
-        })
+    collection.doc(req.params.id).get().then( doc => {
+        
+        if (doc.exists) {
+            throw "User already exists";
+        }
+        if (req.body == null || req.body.info == undefined || req.body.networks == undefined) {
+            throw "Invalid request body";
+        }
+        collection.doc(req.params.id).set(req.body).then( () => {
+            res.status(200).json({
+                "message": "Updated user info",
+                "data": req.body,
+            });
+        });
+
     }).catch(err => {
-        console.log("Error adding user:", err);
+        if (err == "User already exists" || err == "Invalid request body") {
+            res.status(400).json({
+                "message": "Error adding user", 
+                "data": err,
+            });
+        } else {
+            res.status(500).json({
+                "message": "Error adding user", 
+                "data": err,
+            });
+        }
     });
 });
 
 router.post("/addusernetwork/:id/:network", (req, res) => {
     collection.doc(req.params.id).get().then( doc => {
         if (!doc.exists) {
-            throw "Data does not exist";
+            throw "User does not exist";
         }
         //append network
         let newData = doc.data();
+        if (newData["networks"].includes(req.params.network)) {
+            throw "Network already exists for this user";
+        }
         newData["networks"].push(req.params.network);
         //update network
         collection.doc(req.params.id).set(newData);
@@ -81,8 +147,18 @@ router.post("/addusernetwork/:id/:network", (req, res) => {
         });
         
     }).catch(err => {
-        console.log("Error adding user network:", err);
+        if (err == "User does not exist" || err == "Network already exists for this user") {
+            res.status(400).json({
+                "message": "Error updating user network", 
+                "data": err,
+            });
+        } else {
+            res.status(500).json({
+                "message": "Error updating user network", 
+                "data": err,
+            });
+        }
     })
 }); 
 
-module.exports = router;
+module.exports = router
