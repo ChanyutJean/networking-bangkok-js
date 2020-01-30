@@ -1,9 +1,11 @@
 # Hello. This is an api for backend for bangkok-js. Here are the routes.
 
-/api/users : Retrieve all user data
+https://us-central1-networking-bangkok-js.cloudfunctions.net/widgets/<input> : See below
 
-/api/user/:id : Retrieve a specific user data
+/users : Retrieve all user data
 
-/api/adduser/:id : Add user and set the user data to req.body
+/user/:id : Retrieve a specific user data
 
-/api/addusernetwork/:id/:network : Update user of the specified id to have networks of specified value
+/adduser/:id : Add user and set the user data to req.body
+
+/addusernetwork/:id/:network : Update user of the specified id to have networks of specified value
